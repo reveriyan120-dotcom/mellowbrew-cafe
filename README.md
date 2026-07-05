@@ -1,2 +1,1 @@
-# mellowbrew-cafe
-A website for promoting Mellow Brew Cafe
+/// <reference types="vite/client" />

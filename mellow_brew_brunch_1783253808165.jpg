@@ -1,0 +1,357 @@
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { X, Calendar, User, Phone, Clock, FileText, CheckCircle, Ticket, Trash2, ArrowRight } from "lucide-react";
+import { Reservation } from "../types";
+
+interface ReservationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const TIME_SLOTS = [
+  "09:30 (아침 선선한 타임)",
+  "11:00 (시그니처 아침 브런치)",
+  "12:30 (인기 점심 타임)",
+  "14:00 (나른한 커피 & 팬케이크)",
+  "15:30 (따뜻한 오후 디저트 타임)",
+  "17:00 (조용한 노을 타임)",
+  "18:30 (로맨틱 저녁 브루잉)"
+];
+
+export default function ReservationModal({ isOpen, onClose }: ReservationModalProps) {
+  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  
+  // Form State
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState(TIME_SLOTS[1]);
+  const [guests, setGuests] = useState(2);
+  const [request, setRequest] = useState("");
+  const [formStep, setFormStep] = useState(1); // 1: Form, 2: Ticket Receipt
+
+  // Check for existing reservation on open
+  useEffect(() => {
+    const saved = localStorage.getItem("mellow_brew_res");
+    if (saved) {
+      setActiveReservation(JSON.parse(saved));
+    }
+  }, [isOpen]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !phone || !date) {
+      alert("모든 필수 항목을 입력해주세요.");
+      return;
+    }
+
+    const newRes: Reservation = {
+      id: `MB-2026-${Math.floor(Math.random() * 90000) + 10000}`,
+      name,
+      phone,
+      date,
+      time,
+      guests,
+      request
+    };
+
+    localStorage.setItem("mellow_brew_res", JSON.stringify(newRes));
+    setActiveReservation(newRes);
+    setFormStep(2); // Show ticket receipt
+  };
+
+  const handleCancelReservation = () => {
+    if (confirm("정말로 예약을 취소하시겠습니까?")) {
+      localStorage.removeItem("mellow_brew_res");
+      setActiveReservation(null);
+      setFormStep(1);
+      // Reset form
+      setName("");
+      setPhone("");
+      setDate("");
+      setTime(TIME_SLOTS[1]);
+      setGuests(2);
+      setRequest("");
+    }
+  };
+
+  // Get today's date formatted as YYYY-MM-DD for min date picker restriction
+  const getTodayString = () => {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, "0");
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const yyyy = today.getFullYear();
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Dark blur background overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-brand-brown-950/70 backdrop-blur-md"
+          />
+
+          {/* Modal Container */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="relative w-full max-w-lg bg-brand-beige-50 rounded-2xl border border-brand-beige-200 shadow-2xl z-10 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="bg-brand-brown-900 px-6 py-5 text-white flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <Ticket className="w-5 h-5 text-brand-beige-300" />
+                <h3 className="font-serif text-lg font-bold tracking-wider">
+                  {activeReservation ? "MY RESERVATION" : "TABLE RESERVATION"}
+                </h3>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-1 rounded-full hover:bg-white/10 text-brand-beige-200 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content Container */}
+            <div className="p-6 md:p-8 max-h-[80vh] overflow-y-auto">
+              
+              {/* Scenario 1: User ALREADY has a saved reservation */}
+              {activeReservation && (formStep === 2 || formStep === 1) ? (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <div className="inline-flex p-3 bg-emerald-50 rounded-full border border-emerald-100 text-emerald-600 mb-2">
+                      <CheckCircle className="w-8 h-8" />
+                    </div>
+                    <h4 className="font-serif text-lg md:text-xl font-bold text-brand-brown-950">
+                      예약이 확정되었습니다!
+                    </h4>
+                    <p className="text-xs text-brand-brown-600 leading-relaxed font-light">
+                      엄선된 스페셜티 에스프레소와 아늑한 공간을 정성껏 준비하겠습니다.<br />
+                      예약시간 5분 전까지 매장에 방문해 주세요.
+                    </p>
+                  </div>
+
+                  {/* Elegant Golden Ticket UI Receipt */}
+                  <div className="relative bg-white rounded-2xl border border-brand-beige-300/80 p-6 shadow-md overflow-hidden">
+                    {/* Visual notches on the ticket sides */}
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 w-6 h-6 bg-brand-beige-50 border border-brand-beige-300 rounded-full" />
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 w-6 h-6 bg-brand-beige-50 border border-brand-beige-300 rounded-full" />
+
+                    {/* Ticket details */}
+                    <div className="border-b border-dashed border-brand-beige-300 pb-4 mb-4 flex justify-between items-center">
+                      <div>
+                        <div className="text-[9px] font-mono tracking-widest text-brand-brown-400 uppercase">Serial Code</div>
+                        <div className="text-sm font-mono font-bold text-brand-brown-800">{activeReservation.id}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] font-mono tracking-widest text-brand-brown-400 uppercase">Spot</div>
+                        <div className="text-xs font-semibold text-brand-brown-800 font-serif">MELLOW BREW (연남)</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <div className="text-[9px] font-mono text-brand-brown-400 uppercase mb-0.5">Name</div>
+                        <div className="font-bold text-brand-brown-900">{activeReservation.name}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-mono text-brand-brown-400 uppercase mb-0.5">Contact</div>
+                        <div className="font-semibold text-brand-brown-800">{activeReservation.phone}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-mono text-brand-brown-400 uppercase mb-0.5">Date</div>
+                        <div className="font-bold text-brand-brown-900">{activeReservation.date}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-mono text-brand-brown-400 uppercase mb-0.5">Time & Slot</div>
+                        <div className="font-bold text-brand-brown-900">{activeReservation.time.split(" (")[0]}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] font-mono text-brand-brown-400 uppercase mb-0.5">Guests</div>
+                        <div className="font-bold text-brand-brown-900">{activeReservation.guests}인석 테이블</div>
+                      </div>
+                    </div>
+
+                    {activeReservation.request && (
+                      <div className="mt-4 pt-3 border-t border-brand-beige-200 text-[11px] text-brand-brown-600 font-light">
+                        <strong className="font-semibold">요청사항:</strong> &ldquo;{activeReservation.request}&rdquo;
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleCancelReservation}
+                      className="flex-1 flex items-center justify-center space-x-1.5 py-3 border border-red-200 hover:border-red-500 hover:bg-red-50 text-red-600 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>예약 취소하기</span>
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="flex-1 py-3 bg-brand-brown-800 text-white rounded-xl text-xs font-semibold hover:bg-brand-brown-900 transition-colors cursor-pointer"
+                    >
+                      확인 완료
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Scenario 2: Standard form input */
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-1">
+                    <h4 className="font-serif text-base font-bold text-brand-brown-900">
+                      연남동 멜로우브루 좌석 예약
+                    </h4>
+                    <p className="text-xs text-brand-brown-600 font-light leading-relaxed">
+                      주말 및 피크 타임에는 대기 시간이 길어질 수 있으니 예약을 이용해 주시기 바랍니다. (야외 테라스석 및 실내 라운지석 우선 배정)
+                    </p>
+                  </div>
+
+                  {/* Name field */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                      예약자 성함 *
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-brown-400" />
+                      <input
+                        type="text"
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="이름을 입력해 주세요"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs md:text-sm text-brand-brown-900 placeholder-brand-brown-400 focus:outline-none focus:border-brand-brown-600 focus:ring-1 focus:ring-brand-brown-600 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone field */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                      휴대폰 번호 *
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-brown-400" />
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="010-0000-0000"
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs md:text-sm text-brand-brown-900 placeholder-brand-brown-400 focus:outline-none focus:border-brand-brown-600 focus:ring-1 focus:ring-brand-brown-600 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Date Picker */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                        예약 날짜 *
+                      </label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-brown-400 pointer-events-none" />
+                        <input
+                          type="date"
+                          required
+                          min={getTodayString()}
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          className="w-full pl-10 pr-3 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs text-brand-brown-900 focus:outline-none focus:border-brand-brown-600 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Guests selector */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                        방문 인원 *
+                      </label>
+                      <select
+                        value={guests}
+                        onChange={(e) => setGuests(Number(e.target.value))}
+                        className="w-full px-3 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs text-brand-brown-900 focus:outline-none focus:border-brand-brown-600 transition-all"
+                      >
+                        {[1, 2, 3, 4, 5, 6].map((num) => (
+                          <option key={num} value={num}>
+                            {num} 명 방문
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Time slots Selector */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                      예약 시간대 선택 *
+                    </label>
+                    <div className="relative">
+                      <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-brown-400 pointer-events-none" />
+                      <select
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="w-full pl-10 pr-3 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs text-brand-brown-900 focus:outline-none focus:border-brand-brown-600 transition-all"
+                      >
+                        {TIME_SLOTS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Special requests */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-brand-brown-500 font-bold block">
+                      특별 요청 사항 (선택)
+                    </label>
+                    <div className="relative">
+                      <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-brand-brown-400" />
+                      <textarea
+                        value={request}
+                        onChange={(e) => setRequest(e.target.value)}
+                        placeholder="창가 자리, 테라스 우선, 알레르기 안내 등의 요청 사항을 입력해 주세요."
+                        rows={3}
+                        className="w-full pl-10 pr-4 py-3 bg-white border border-brand-beige-300 rounded-xl text-xs text-brand-brown-900 placeholder-brand-brown-400 focus:outline-none focus:border-brand-brown-600 transition-all resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submission buttons */}
+                  <div className="pt-4 flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-5 py-3 border border-brand-beige-300 hover:border-brand-brown-400 rounded-xl text-xs font-semibold text-brand-brown-700 transition-all cursor-pointer"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-brand-brown-800 hover:bg-brand-brown-950 text-white rounded-xl text-xs font-semibold tracking-wider uppercase transition-all flex justify-center items-center space-x-1 cursor-pointer shadow-md"
+                    >
+                      <span>예약 신청하기</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}

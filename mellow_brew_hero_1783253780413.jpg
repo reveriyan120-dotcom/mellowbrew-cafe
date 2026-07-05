@@ -1,0 +1,71 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { useState } from "react";
+import { motion } from "motion/react";
+import Navbar from "./components/Navbar";
+import Hero from "./components/Hero";
+import BrandStory from "./components/BrandStory";
+import MenuSection from "./components/MenuSection";
+import GallerySection from "./components/GallerySection";
+import ContactSection from "./components/ContactSection";
+import Footer from "./components/Footer";
+import ReservationModal from "./components/ReservationModal";
+
+export default function App() {
+  const [isResOpen, setIsResOpen] = useState(false);
+
+  // Scroll reveal animation settings for a warm, sensual entry
+  const scrollReveal = {
+    initial: { opacity: 0, y: 40 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: "-100px" },
+    transition: { duration: 0.8, ease: "easeOut" }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col font-sans selection:bg-brand-beige-300 selection:text-brand-brown-950">
+      
+      {/* Sticky navigation glassmorphism */}
+      <Navbar onOpenReservation={() => setIsResOpen(true)} />
+
+      {/* Main Sections */}
+      <main className="flex-grow">
+        
+        {/* Hero Section */}
+        <Hero onOpenReservation={() => setIsResOpen(true)} />
+
+        {/* Brand Story Section with soft fade up scroll reveal */}
+        <motion.div {...scrollReveal}>
+          <BrandStory />
+        </motion.div>
+
+        {/* Menu Section with soft fade up scroll reveal */}
+        <motion.div {...scrollReveal}>
+          <MenuSection />
+        </motion.div>
+
+        {/* Gallery Section with soft fade up scroll reveal */}
+        <motion.div {...scrollReveal}>
+          <GallerySection />
+        </motion.div>
+
+        {/* Contact/Map Section with soft fade up scroll reveal */}
+        <motion.div {...scrollReveal}>
+          <ContactSection />
+        </motion.div>
+        
+      </main>
+
+      {/* Premium minimal Footer */}
+      <Footer />
+
+      {/* Interactive Reservation Modal system */}
+      <ReservationModal isOpen={isResOpen} onClose={() => setIsResOpen(false)} />
+      
+    </div>
+  );
+}
+
